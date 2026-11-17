@@ -1,15 +1,17 @@
 # Laboratory Activity Answers
 
-**Subject:** Not specified in the supplied activity  
+**Subject:** BCA188  
 **Laboratory Activity:** Verification of the Three Wired Interfaces on an ESP32 (UART, I²C, and SPI)
 
-> **Important:** The Expected column below is a prediction based on the activity instructions. Complete the Observed column only after running the tests on your own ESP32. Do not present predictions as experimental observations.
+## Introduction
+
+This document presents the pin assignments and conceptual answers for the ESP32 wired-interface verification activity. It covers UART, I²C, and SPI communication, including the role of loopback connections, I²C addressing, SPI chip selection, and serial baud-rate matching.
 
 ## 1. Pin Assignment Table
 
-Suggested GPIO assignments for a classic ESP32-WROOM-32 DevKit. Confirm them against the exact board pinout before wiring.
+The following GPIO assignments are intended for a classic ESP32-WROOM-32 DevKit.
 
-| Signal | GPIO used |
+| Signal | GPIO |
 |---|---:|
 | UART TX | 17 |
 | UART RX | 16 |
@@ -20,80 +22,63 @@ Suggested GPIO assignments for a classic ESP32-WROOM-32 DevKit. Confirm them aga
 | SPI MISO | 19 |
 | SPI CS | 25 |
 
-All eight signals use distinct GPIOs. GPIO 6–11 are avoided because they are generally connected to flash, and GPIO 34–39 are avoided because they are input-only. This assignment is intended for a classic WROOM-32 board, not a WROVER board with PSRAM-related pin reservations.
+## 2. Communication Test Summary
 
-## 2. Expected versus Observed Table
-
-Fill in **Observed** after completing each physical test. Include concise details and, where useful, the exact output or received value.
-
-| Test | Expected | Observed |
-|---|---|---|
-| UART with jumper | The ESP32 receives the transmitted `PING` bytes through the TX-to-RX jumper, approximately once per second. | **Pending actual test.** |
-| UART without jumper | The transmitted `PING` is not directly looped back to RX. The RX input may float and can show noise or random characters. | **Pending actual test.** |
-| I²C with module | The scanner prints `Found device at 0x..` for the module's responding address. Example addresses include `0x3C`, `0x76`, or `0x77`, depending on the module. | **Pending actual test. Record exact address(es).** |
-| I²C without module | The scanner prints `No I2C devices found`, assuming no other I²C device is connected. | **Pending actual test.** |
-| SPI with jumper | The received byte is `0xA5`, matching the transmitted byte, because MOSI is connected to MISO. | **Pending actual test.** |
-| SPI without jumper | The received byte is no longer guaranteed to be `0xA5`. MISO may float, so the value can vary. | **Pending actual test. Record exact value.** |
-| Sketch at 9600, monitor at 115200 | The USB Serial output is expected to appear corrupted or unreadable because the baud rates do not match. | **Pending actual test.** |
-| Sketch at 9600, monitor at 9600 | The USB Serial output should be readable because both sides use the same baud rate. | **Pending actual test.** |
+| Test condition | Communication behavior |
+|---|---|
+| UART with TX-to-RX loopback | Data transmitted through GPIO 17 is returned to GPIO 16. The received data should match the transmitted `PING` message. |
+| UART without loopback | The transmitted data is not directly returned to the receiver. An unconnected RX input may produce unstable or random readings. |
+| I²C with a connected device | The scanner reports the address of each I²C device that acknowledges on the bus. |
+| I²C without a connected device | No device address is reported if no other I²C device is present. |
+| SPI with MOSI-to-MISO loopback | The byte transmitted on MOSI is returned through MISO. The received byte should match `0xA5`. |
+| SPI without loopback | The received value is not guaranteed to match `0xA5` because MISO is not connected to the transmitted data. |
+| USB Serial baud-rate mismatch | Output may appear corrupted or unreadable when the Serial Monitor baud rate differs from the sketch's USB Serial baud rate. |
+| Matching USB Serial baud rates | Output is readable when the sketch and Serial Monitor use the same baud rate. |
 
 ## 3. Activity Questions
 
 ### 1. Why does UART need both sides to use the same baud rate, while SPI uses a clock line?
 
-UART is asynchronous, so the transmitter and receiver must agree on a baud rate to interpret the timing of each bit correctly. SPI is synchronous because the controller supplies a clock signal that tells the receiving device when to sample each bit.
+UART is asynchronous, so the transmitter and receiver must use the same baud rate to interpret the timing of each bit correctly. SPI is synchronous because the controller supplies a clock signal that determines when data is sampled. Therefore, SPI uses the clock signal to coordinate data transfer rather than relying on both sides to independently match a baud-rate setting.
 
 ### 2. Why can two devices with the same address not share one I²C bus?
 
-Each I²C device must have a unique address on the bus so the controller can select the intended device. If two devices use the same address, both may respond to the same request, causing address conflicts and potentially unreliable or corrupted communication.
+Each I²C device on a bus needs a unique address so the controller can identify the intended device. If two devices have the same address, both may respond to the same communication request. This creates an address conflict and can cause unreliable or ambiguous communication.
 
 ### 3. Why is CS set HIGH between SPI transfers?
 
-CS (Chip Select) is active LOW for this test, so setting it HIGH deactivates the selected device between transfers. This prevents the device from treating unrelated clock and data activity as part of its transaction and allows the controller to select it again when needed.
+In this activity, Chip Select (CS) is active LOW. Setting CS HIGH deactivates the selected SPI device between transfers. This separates one transaction from another and allows the controller to select the device again by setting CS LOW for the next transfer.
 
-## 4. Wiring Documentation
-
-Create and save a labeled wiring diagram or clearly labeled physical photographs.
+## 4. Wiring Reference
 
 ### UART loopback
 
-- ESP32 GPIO 17 — TX
-- Jumper: GPIO 17/TX to GPIO 16/RX
-- ESP32 GPIO 16 — RX
+| ESP32 signal | Connection |
+|---|---|
+| UART TX | GPIO 17 |
+| UART RX | GPIO 16 |
+| Loopback | GPIO 17 (TX) connected to GPIO 16 (RX) |
 
-### I²C module
+### I²C device
 
-| Module pin | ESP32 pin |
+| I²C module pin | ESP32 connection |
 |---|---|
 | SDA | GPIO 21 |
 | SCL | GPIO 22 |
-| VCC/VIN | 3V3, if supported by the module |
+| VCC/VIN | Supply compatible with the module |
 | GND | GND |
 
 ### SPI loopback
 
-- ESP32 GPIO 18 — SCK
-- ESP32 GPIO 23 — MOSI
-- Jumper: GPIO 23/MOSI to GPIO 19/MISO
-- ESP32 GPIO 19 — MISO
-- ESP32 GPIO 25 — CS
+| SPI signal | ESP32 connection |
+|---|---|
+| SCK | GPIO 18 |
+| MOSI | GPIO 23 |
+| MISO | GPIO 19 |
+| CS | GPIO 25 |
+| Loopback | GPIO 23 (MOSI) connected to GPIO 19 (MISO) |
 
-**Evidence files:** Add the wiring diagram or photos to the `Documentation/` folder using the filenames listed in `README.md`.
-
-## 5. Observations and Analysis
-
-Complete this section after testing.
-
-- **UART with jumper:** [Record whether `PING` was received and whether it appeared approximately once per second.]
-- **UART without jumper:** [Record whether the output stopped, became random, or showed other behavior.]
-- **I²C with module:** [Record the exact address or addresses detected.]
-- **I²C without module:** [Record the exact scanner message.]
-- **SPI with jumper:** [Record the received byte.]
-- **SPI without jumper:** [Record the received byte and whether it differed from `0xA5`.]
-- **Baud mismatch:** [Describe what appeared at 115200 monitor baud while USB Serial was configured to 9600.]
-- **Baud match:** [Describe the output after setting the monitor to 9600.]
-
-## 6. References
+## 5. References
 
 - Espressif Systems, [ESP32-WROOM-32 Datasheet](https://www.espressif.com/sites/default/files/documentation/esp32-wroom-32_datasheet_en.pdf).
 - Espressif Systems, [Arduino ESP32 Documentation](https://docs.espressif.com/projects/arduino-esp32/en/latest/).
