@@ -1,6 +1,6 @@
 # Laboratory Activity Answers
 
-**Subject:** BCA188  
+**Subject:** BCA188 - Programming for Internet of Things   
 **Laboratory Activity:** Verification of the Three Wired Interfaces on an ESP32 (UART, I²C, and SPI)
 
 ## Introduction
