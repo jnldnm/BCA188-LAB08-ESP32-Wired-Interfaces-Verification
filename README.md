@@ -1,5 +1,8 @@
 # ESP32 Wired Interfaces Verification: UART, I²C, and SPI
 
+**Subject:** BCA188 - Programming for Internet of Things   
+**Laboratory Activity:** Verification of the Three Wired Interfaces on an ESP32 (UART, I²C, and SPI)
+
 ## Introduction
 
 This laboratory activity examines three wired communication interfaces supported by the ESP32-WROOM-32: Universal Asynchronous Receiver/Transmitter (UART), Inter-Integrated Circuit (I²C), and Serial Peripheral Interface (SPI). The project uses separate Arduino sketches to demonstrate UART and SPI loopback communication and I²C device-address detection.
